@@ -1,0 +1,72 @@
+import bcrypt from 'bcryptjs';
+import { timingSafeEqual } from 'node:crypto';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { connectToDatabase } from '@/lib/db';
+import { AdminUser } from '@/models/content';
+import { createSession } from '@/lib/auth';
+
+const setupSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  name: z.string().trim().max(120).optional(),
+  password: z.string().min(12).max(200),
+  setupToken: z.string().min(1).max(500),
+});
+
+function tokenMatches(suppliedToken, configuredToken) {
+  const supplied = Buffer.from(suppliedToken);
+  const configured = Buffer.from(configuredToken);
+  return supplied.length === configured.length && timingSafeEqual(supplied, configured);
+}
+
+export async function GET() {
+  try {
+    await connectToDatabase();
+    const setupAvailable = !(await AdminUser.exists({}));
+    return NextResponse.json({
+      setupAvailable: Boolean(setupAvailable),
+      email: process.env.ADMIN_EMAIL?.toLowerCase() || '',
+    });
+  } catch (error) {
+    console.error('Admin setup status check failed:', error);
+    return NextResponse.json({ error: 'Unable to check admin setup.' }, { status: 503 });
+  }
+}
+
+export async function POST(request) {
+  const parsed = setupSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Enter the configured admin email, setup token, and a password of at least 12 characters.' }, { status: 400 });
+  }
+
+  const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const configuredToken = process.env.ADMIN_SETUP_TOKEN;
+  if (!configuredEmail || !configuredToken) {
+    return NextResponse.json({ error: 'First-admin setup is not configured on the server.' }, { status: 503 });
+  }
+  if (parsed.data.email !== configuredEmail || !tokenMatches(parsed.data.setupToken, configuredToken)) {
+    return NextResponse.json({ error: 'The admin email or setup token is incorrect.' }, { status: 403 });
+  }
+
+  try {
+    await connectToDatabase();
+    if (await AdminUser.exists({})) {
+      return NextResponse.json({ error: 'An admin account already exists. Sign in instead.' }, { status: 409 });
+    }
+
+    const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+    const admin = await AdminUser.create({
+      email: configuredEmail,
+      name: parsed.data.name || '',
+      passwordHash,
+    });
+    await createSession(admin.email);
+    return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return NextResponse.json({ error: 'An admin account already exists. Sign in instead.' }, { status: 409 });
+    }
+    console.error('First-admin setup failed:', error);
+    return NextResponse.json({ error: 'Unable to create the first admin account.' }, { status: 503 });
+  }
+}
