@@ -20,17 +20,7 @@ function tokenMatches(suppliedToken, configuredToken) {
 }
 
 export async function GET() {
-  try {
-    await connectToDatabase();
-    const setupAvailable = !(await AdminUser.exists({}));
-    return NextResponse.json({
-      setupAvailable: Boolean(setupAvailable),
-      email: process.env.ADMIN_EMAIL?.toLowerCase() || '',
-    });
-  } catch (error) {
-    console.error('Admin setup status check failed:', error);
-    return NextResponse.json({ error: 'Unable to check admin setup.' }, { status: 503 });
-  }
+  return NextResponse.json({ email: process.env.ADMIN_EMAIL?.trim().toLowerCase() || '' });
 }
 
 export async function POST(request) {

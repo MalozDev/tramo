@@ -10,7 +10,6 @@ export default function AdminLogin() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [setupAvailable, setSetupAvailable] = useState(false);
   const [setupEmail, setSetupEmail] = useState('');
   const [showSetup, setShowSetup] = useState(false);
 
@@ -19,8 +18,7 @@ export default function AdminLogin() {
     fetch('/api/auth/setup')
       .then((response) => (response.ok ? response.json() : null))
       .then((result) => {
-        if (active && result?.setupAvailable) {
-          setSetupAvailable(true);
+        if (active && result?.email) {
           setSetupEmail(result.email || '');
         }
       })
@@ -134,18 +132,16 @@ export default function AdminLogin() {
         >
           {pending ? (showSetup ? 'Creating account…' : 'Signing in…') : showSetup ? 'Create admin account' : 'Sign in'}
         </button>
-        {setupAvailable && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowSetup(!showSetup);
-              setError('');
-            }}
-            className="justify-self-center border-0 bg-transparent p-1 text-[12px] text-muted underline underline-offset-4 hover:text-ink"
-          >
-            {showSetup ? 'Back to sign in' : 'Set up first admin'}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => {
+            setShowSetup(!showSetup);
+            setError('');
+          }}
+          className="justify-self-center border-0 bg-transparent p-1 text-[12px] text-muted underline underline-offset-4 hover:text-ink"
+        >
+          {showSetup ? 'Back to sign in' : 'Create user'}
+        </button>
       </form>
     </main>
   );
