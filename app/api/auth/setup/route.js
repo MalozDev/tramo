@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectToDatabase } from '@/lib/db';
@@ -10,14 +9,7 @@ const setupSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   name: z.string().trim().max(120).optional(),
   password: z.string().min(12).max(200),
-  setupToken: z.string().min(1).max(500),
 });
-
-function tokenMatches(suppliedToken, configuredToken) {
-  const supplied = Buffer.from(suppliedToken);
-  const configured = Buffer.from(configuredToken);
-  return supplied.length === configured.length && timingSafeEqual(supplied, configured);
-}
 
 export async function GET() {
   return NextResponse.json({ email: process.env.ADMIN_EMAIL?.trim().toLowerCase() || '' });
@@ -26,16 +18,15 @@ export async function GET() {
 export async function POST(request) {
   const parsed = setupSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Enter the configured admin email, setup token, and a password of at least 12 characters.' }, { status: 400 });
+    return NextResponse.json({ error: 'Enter the configured admin email and a password of at least 12 characters.' }, { status: 400 });
   }
 
   const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const configuredToken = process.env.ADMIN_SETUP_TOKEN;
-  if (!configuredEmail || !configuredToken) {
+  if (!configuredEmail) {
     return NextResponse.json({ error: 'First-admin setup is not configured on the server.' }, { status: 503 });
   }
-  if (parsed.data.email !== configuredEmail || !tokenMatches(parsed.data.setupToken, configuredToken)) {
-    return NextResponse.json({ error: 'The admin email or setup token is incorrect.' }, { status: 403 });
+  if (parsed.data.email !== configuredEmail) {
+    return NextResponse.json({ error: 'Use the configured admin email.' }, { status: 403 });
   }
 
   try {

@@ -82,10 +82,6 @@ export default function AdminLogin() {
               />
             </label>
             <label className="grid gap-1.5 text-[12px] text-muted">
-              Setup token
-              <input name="setupToken" type="password" autoComplete="off" required className={inputClass} />
-            </label>
-            <label className="grid gap-1.5 text-[12px] text-muted">
               Password
               <input
                 name="password"
