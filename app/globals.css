@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens — same palette as the approved TRAMO mockups.
+   Declared once here, used as utilities everywhere (bg-ink, text-accent, …).
+--------------------------------------------------------------------------- */
+@theme {
+  --color-ink: #142426;
+  --color-ink-soft: #263735;
+  --color-paper: #f4f2ec;
+  --color-paper-dim: #f8f8f4;
+  --color-sage: #e4e7d9;
+  --color-accent: #d75132;
+  --color-accent-dark: #9e361f;
+  --color-muted: #687675;
+  --color-line: #d2d7ce;
+  --color-line-dark: #445350;
+  --color-leaf: #a9bd8d;
+  --color-mist: #bec8c3;
+  --color-blush: #df927f;
+
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+}
